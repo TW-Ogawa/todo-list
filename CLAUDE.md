@@ -1,204 +1,204 @@
-# CLAUDE.md - AI Assistant Guide for ToDo List Application
+# CLAUDE.md - ToDoリストアプリケーションのAIアシスタントガイド
 
-## Project Overview
+## プロジェクト概要
 
-This is a simple, client-side only ToDo list web application built with vanilla JavaScript, HTML5, and Tailwind CSS. The application uses `localStorage` for data persistence and requires no backend server or build process.
+これは、vanilla JavaScript、HTML5、Tailwind CSSで構築されたシンプルなクライアントサイドのみのToDoリストWebアプリケーションです。データの永続化には`localStorage`を使用し、バックエンドサーバーやビルドプロセスは不要です。
 
-**Language**: Japanese (UI and documentation)
-**Type**: Educational/demonstration project
-**Status**: Active development
+**言語**: 日本語（UIとドキュメント）
+**種類**: 教育/デモンストレーションプロジェクト
+**ステータス**: 開発中
 
-## Quick Start
+## クイックスタート
 
-1. Open `login.html` in a browser
-2. Default credentials: username `user`, password `pass`
-3. No build tools, package managers, or server required
+1. ブラウザで`login.html`を開く
+2. デフォルト認証情報：ユーザー名 `user`、パスワード `pass`
+3. ビルドツール、パッケージマネージャー、サーバーは不要
 
-## Architecture
+## アーキテクチャ
 
-### Technology Stack
+### 技術スタック
 
-- **HTML5**: Semantic markup with Japanese language support (`lang="ja"`)
-- **JavaScript ES6**: Vanilla JavaScript with modern syntax
-- **Tailwind CSS**: Via CDN (https://cdn.tailwindcss.com)
-- **Storage**: Browser `localStorage` for data persistence
+- **HTML5**: 日本語対応のセマンティックマークアップ（`lang="ja"`）
+- **JavaScript ES6**: モダンな構文を使用したVanilla JavaScript
+- **Tailwind CSS**: CDN経由（https://cdn.tailwindcss.com）
+- **ストレージ**: データ永続化にブラウザの`localStorage`を使用
 
-### Application Type
+### アプリケーションタイプ
 
-- **Client-side only**: No backend, API, or database
-- **Multi-page application (MPA)**: Three separate HTML files with page reloads for navigation
-- **State management**: `localStorage` acts as the single source of truth
+- **クライアントサイドのみ**: バックエンド、API、データベースなし
+- **マルチページアプリケーション（MPA）**: ページ遷移時にリロードする3つの独立したHTMLファイル
+- **状態管理**: `localStorage`が唯一の真実の情報源として機能
 
-### Data Flow
+### データフロー
 
 ```
-User Action → JavaScript Function → localStorage → Re-render DOM
-                                    ↓
-                            Persisted across sessions
+ユーザーアクション → JavaScript関数 → localStorage → DOMの再レンダリング
+                                      ↓
+                              セッション間で永続化
 ```
 
-## File Structure
+## ファイル構成
 
 ```
 todo-list/
-├── login.html              # Login page
-├── todolist.html           # ToDo list view (main page)
-├── edit.html               # Create/edit ToDo form
+├── login.html              # ログインページ
+├── todolist.html           # ToDo一覧ビュー（メインページ）
+├── edit.html               # ToDo作成/編集フォーム
 ├── js/
-│   └── app.js              # All JavaScript logic (192 lines)
+│   └── app.js              # すべてのJavaScriptロジック（192行）
 ├── .github/
-│   └── copilot-instructions.md   # GitHub Copilot AI guide
+│   └── copilot-instructions.md   # GitHub Copilot AIガイド
 ├── .gemini/
-│   └── styleguide.md             # Gemini AI guide (Japanese responses)
-├── README.md               # User-facing documentation (Japanese)
-└── CLAUDE.md              # This file (Claude AI guide)
+│   └── styleguide.md             # Gemini AIガイド（日本語応答）
+├── README.md               # ユーザー向けドキュメント（日本語）
+└── CLAUDE.md              # このファイル（Claude AIガイド）
 ```
 
-### HTML Files
+### HTMLファイル
 
-All HTML files share common patterns:
-- UTF-8 encoding with Japanese language support
-- Responsive viewport meta tag
-- Tailwind CSS CDN in `<head>`
-- Import `js/app.js` before closing `</body>`
-- Clean, semantic markup with Tailwind utility classes
+すべてのHTMLファイルは共通のパターンを持っています：
+- UTF-8エンコーディングと日本語サポート
+- レスポンシブなviewportメタタグ
+- `<head>`内にTailwind CSS CDN
+- `</body>`の直前に`js/app.js`をインポート
+- Tailwindユーティリティクラスを使用したクリーンでセマンティックなマークアップ
 
 **login.html**
-- Simple centered login form
-- Username and password inputs (both required)
-- Error message container (hidden by default)
-- Form ID: `loginForm`
+- シンプルな中央寄せのログインフォーム
+- ユーザー名とパスワードの入力欄（両方必須）
+- エラーメッセージコンテナ（デフォルトで非表示）
+- フォームID: `loginForm`
 
 **todolist.html**
-- Header with title and logout button
-- "新規作成" (Create New) button linking to `edit.html`
-- Empty `<ul id="todoList">` container (populated by JavaScript)
+- タイトルとログアウトボタンを含むヘッダー
+- `edit.html`へのリンク「新規作成」ボタン
+- 空の`<ul id="todoList">`コンテナ（JavaScriptで生成）
 
 **edit.html**
-- Centered form for creating/editing ToDos
-- Title input (required) and detail textarea (optional)
-- Form ID: `todoForm`
-- Query parameter `?idx=N` indicates edit mode
+- ToDo作成/編集用の中央寄せフォーム
+- タイトル入力（必須）と詳細テキストエリア（任意）
+- フォームID: `todoForm`
+- クエリパラメータ`?idx=N`は編集モードを示す
 
-## JavaScript Architecture (app.js)
+## JavaScriptアーキテクチャ（app.js）
 
-### Code Organization
+### コード構成
 
-The `app.js` file is organized into logical sections:
+`app.js`ファイルは論理的なセクションに分かれています：
 
-1. **Authentication Functions** (lines 5-25)
-2. **Data Management Functions** (lines 27-35)
-3. **Page Initialization** (lines 37-103)
-4. **Rendering & Actions** (lines 105-191)
+1. **認証関数**（5-25行目）
+2. **データ管理関数**（27-35行目）
+3. **ページ初期化**（37-103行目）
+4. **レンダリングとアクション**（105-191行目）
 
-### Key Functions
+### 主要な関数
 
-#### Authentication
+#### 認証
 
 ```javascript
 checkLogin()
 ```
-- Verifies `localStorage.getItem('todo_login') === '1'`
-- Redirects to `login.html` if not authenticated
-- Called on page load for protected pages
+- `localStorage.getItem('todo_login') === '1'`を検証
+- 認証されていない場合、`login.html`にリダイレクト
+- 保護されたページの読み込み時に呼び出される
 
 ```javascript
 login(username, password)
 ```
-- **Hardcoded credentials**: `user` / `pass`
-- Returns `true` on success, `false` on failure
-- Sets `localStorage.setItem('todo_login', '1')`
-- **Security note**: Not suitable for production use
+- **ハードコードされた認証情報**: `user` / `pass`
+- 成功時に`true`、失敗時に`false`を返す
+- `localStorage.setItem('todo_login', '1')`を設定
+- **セキュリティ注意**: 本番環境には不適切
 
 ```javascript
 logout()
 ```
-- Removes `todo_login` from localStorage
-- Redirects to `login.html`
+- localStorageから`todo_login`を削除
+- `login.html`にリダイレクト
 
-#### Data Management
+#### データ管理
 
 ```javascript
 getTodos()
 ```
-- Returns parsed array from `localStorage.getItem('todos')`
-- Defaults to empty array `[]` if no data exists
-- **Location**: js/app.js:29
+- `localStorage.getItem('todos')`からパース済み配列を返す
+- データが存在しない場合は空配列`[]`をデフォルトとする
+- **場所**: js/app.js:29
 
 ```javascript
 saveTodos(todos)
 ```
-- Stringifies and saves array to `localStorage.setItem('todos', ...)`
-- **Location**: js/app.js:33
+- 配列を文字列化して`localStorage.setItem('todos', ...)`に保存
+- **場所**: js/app.js:33
 
-#### Page-Specific Logic
+#### ページ固有のロジック
 
-The app uses a single DOMContentLoaded event listener that determines which page logic to execute based on the presence of specific DOM elements:
+アプリは単一のDOMContentLoadedイベントリスナーを使用し、特定のDOM要素の存在に基づいて実行するページロジックを決定します：
 
-**Login Page** (lines 50-64)
-- Detects `#loginForm`
-- Handles form submission
-- Shows error message on failed login
-- Returns early to skip authentication check
+**ログインページ**（50-64行目）
+- `#loginForm`を検出
+- フォーム送信を処理
+- ログイン失敗時にエラーメッセージを表示
+- 認証チェックをスキップして早期に戻る
 
-**Edit Page** (lines 72-96)
-- Detects `#todoForm`
-- Reads `?idx=` query parameter for edit mode
-- Pre-fills form fields if editing existing ToDo
-- Preserves `checked` property when updating
-- Redirects to `todolist.html` after save
+**編集ページ**（72-96行目）
+- `#todoForm`を検出
+- 編集モード用の`?idx=`クエリパラメータを読み取り
+- 既存のToDoを編集する場合、フォームフィールドを事前入力
+- 更新時に`checked`プロパティを保持
+- 保存後、`todolist.html`にリダイレクト
 
-**ToDo List Page** (lines 99-102)
-- Detects `#todoList`
-- Calls `renderTodos()` to populate the list
+**ToDo一覧ページ**（99-102行目）
+- `#todoList`を検出
+- `renderTodos()`を呼び出してリストを生成
 
-#### Rendering & Actions
+#### レンダリングとアクション
 
 ```javascript
 renderTodos()
 ```
-- Clears and rebuilds `#todoList` DOM
-- Creates elements programmatically (no innerHTML for user data)
-- **Security**: Uses `textContent` instead of `innerHTML` to prevent XSS
-- Attaches event listeners to checkboxes and delete buttons
-- Shows "ToDoがありません。" when empty
-- **Location**: js/app.js:109
+- `#todoList` DOMをクリアして再構築
+- プログラム的に要素を作成（ユーザーデータにinnerHTMLを使用しない）
+- **セキュリティ**: XSS防止のため`innerHTML`の代わりに`textContent`を使用
+- チェックボックスと削除ボタンにイベントリスナーを追加
+- 空の場合は「ToDoがありません。」を表示
+- **場所**: js/app.js:109
 
 ```javascript
 toggleCheck(idx)
 ```
-- Toggles `checked` boolean for ToDo at index
-- Saves and re-renders
-- **Location**: js/app.js:176
+- インデックスのToDoの`checked`ブール値を切り替え
+- 保存して再レンダリング
+- **場所**: js/app.js:176
 
 ```javascript
 deleteTodo(idx)
 ```
-- Shows confirmation dialog: "本当に削除しますか？"
-- Uses `Array.splice(idx, 1)` to remove
-- Saves and re-renders
-- **Location**: js/app.js:185
+- 確認ダイアログを表示：「本当に削除しますか？」
+- `Array.splice(idx, 1)`を使用して削除
+- 保存して再レンダリング
+- **場所**: js/app.js:185
 
-## Data Structure
+## データ構造
 
-### localStorage Keys
+### localStorageキー
 
-| Key | Type | Description |
+| キー | 型 | 説明 |
 |-----|------|-------------|
-| `todo_login` | String | Authentication flag (`'1'` = logged in) |
-| `todos` | JSON String | Serialized array of ToDo objects |
+| `todo_login` | String | 認証フラグ（`'1'` = ログイン済み） |
+| `todos` | JSON String | ToDoオブジェクトのシリアライズされた配列 |
 
-### ToDo Object Schema
+### ToDoオブジェクトスキーマ
 
 ```javascript
 {
-  title: String,    // Required. ToDo title/name
-  detail: String,   // Optional. Additional details
-  checked: Boolean  // Completion status (default: false)
+  title: String,    // 必須。ToDoタイトル/名前
+  detail: String,   // 任意。追加の詳細
+  checked: Boolean  // 完了ステータス（デフォルト: false）
 }
 ```
 
-**Example**:
+**例**:
 ```javascript
 [
   {
@@ -214,248 +214,249 @@ deleteTodo(idx)
 ]
 ```
 
-## Coding Conventions
+## コーディング規約
 
-### JavaScript Style
+### JavaScriptスタイル
 
-- **ES6 syntax**: Arrow functions, template literals, destructuring
-- **No semicolons**: Optional (but used consistently in this project)
-- **DOM manipulation**:
-  - Use `document.getElementById()` for element selection
-  - Create elements with `document.createElement()`
-  - Use `textContent` (never `innerHTML`) for user-generated content
-- **Event handling**:
-  - Prefer `addEventListener()` over inline `onclick` attributes
-  - Attach listeners in DOMContentLoaded callback or during render
-- **Error handling**: Minimal (relies on browser defaults)
+- **ES6構文**: アロー関数、テンプレートリテラル、分割代入
+- **セミコロンなし**: 任意（このプロジェクトでは一貫して使用）
+- **DOM操作**:
+  - 要素選択には`document.getElementById()`を使用
+  - `document.createElement()`で要素を作成
+  - ユーザー生成コンテンツには`textContent`を使用（`innerHTML`は使用しない）
+- **イベント処理**:
+  - インライン`onclick`属性よりも`addEventListener()`を優先
+  - DOMContentLoadedコールバックまたはレンダリング中にリスナーを追加
+- **エラー処理**: 最小限（ブラウザのデフォルトに依存）
 
-### Security Practices
+### セキュリティプラクティス
 
-✅ **What the code does well**:
-- Uses `textContent` to prevent XSS when rendering user data
-- No use of `eval()` or dangerous patterns
+✅ **コードが適切に行っていること**:
+- ユーザーデータをレンダリングする際にXSSを防ぐために`textContent`を使用
+- `eval()`や危険なパターンを使用していない
 
-⚠️ **Known limitations** (acceptable for demo/learning project):
-- Hardcoded credentials in source code
-- No CSRF protection (client-side only, so N/A)
-- No input sanitization (relies on textContent)
-- Authentication state stored in plain localStorage
+⚠️ **既知の制限事項**（デモ/学習プロジェクトとして許容）:
+- ソースコード内にハードコードされた認証情報
+- CSRF保護なし（クライアントサイドのみなので該当なし）
+- 入力のサニタイゼーションなし（textContentに依存）
+- 認証状態がプレーンなlocalStorageに保存
 
-### HTML/CSS Patterns
+### HTML/CSSパターン
 
-- **Tailwind classes**: Utility-first approach
-- **Responsive**: Uses Tailwind responsive utilities and flexbox
-- **Accessibility**: Basic form labels, but could be improved
-- **Class naming**: Tailwind utilities only (no custom CSS)
+- **Tailwindクラス**: ユーティリティファーストのアプローチ
+- **レスポンシブ**: Tailwindレスポンシブユーティリティとflexboxを使用
+- **アクセシビリティ**: 基本的なフォームラベルのみ、改善の余地あり
+- **クラス命名**: Tailwindユーティリティのみ（カスタムCSSなし）
 
-## Development Workflows
+## 開発ワークフロー
 
-### Making Changes
+### 変更を加える
 
-1. **Edit HTML/JS files directly** in your editor
-2. **Refresh browser** to see changes (no build step)
-3. **Test manually** in browser DevTools
-4. **Commit with clear messages** (see Git Conventions below)
+1. **HTML/JSファイルを直接編集** エディタで編集
+2. **ブラウザをリフレッシュ** 変更を確認（ビルドステップなし）
+3. **手動テスト** ブラウザDevToolsで実施
+4. **明確なメッセージでコミット** （下記のGit規約を参照）
 
-### Debugging
+### デバッグ
 
-- **Console logging**: Add `console.log()` statements
+- **コンソールログ**: `console.log()`文を追加
 - **DevTools**:
-  - Application tab → Local Storage to inspect data
-  - Console for errors
-  - Elements tab for DOM inspection
-- **Network tab**: Verify CDN resources load correctly
+  - Applicationタブ → Local Storageでデータを検査
+  - Consoleでエラーを確認
+  - Elementsタブで DOM を検査
+- **Networkタブ**: CDNリソースが正しく読み込まれているか確認
 
-### Testing Strategy
+### テスト戦略
 
-**Current state**: No automated tests
+**現在の状態**: 自動テストなし
 
-**Manual testing checklist**:
-- [ ] Login with correct credentials
-- [ ] Login with incorrect credentials (should show error)
-- [ ] Create new ToDo
-- [ ] Edit existing ToDo
-- [ ] Toggle ToDo completion
-- [ ] Delete ToDo
-- [ ] Logout and verify session cleared
-- [ ] Test with empty localStorage
-- [ ] Test with multiple ToDos
+**手動テストチェックリスト**:
+- [ ] 正しい認証情報でログイン
+- [ ] 間違った認証情報でログイン（エラー表示を確認）
+- [ ] 新しいToDoを作成
+- [ ] 既存のToDoを編集
+- [ ] ToDoの完了を切り替え
+- [ ] ToDoを削除
+- [ ] ログアウトしてセッションがクリアされることを確認
+- [ ] 空のlocalStorageでテスト
+- [ ] 複数のToDoでテスト
 
-**Recommended for future**:
-- Unit tests with Jest or Vitest
-- E2E tests with Playwright or Cypress
-- Accessibility testing with axe-core
+**将来の推奨事項**:
+- JestまたはVitestによるユニットテスト
+- PlaywrightまたはCypressによるE2Eテスト
+- axe-coreによるアクセシビリティテスト
 
-## Git Conventions
+## Git規約
 
-### Branch Naming
+### ブランチ命名
 
-- **Feature branches**: Start with `claude/` for AI assistant work
-- **Main branch**: Default branch for stable code
-- Always develop on designated feature branches
+- **機能ブランチ**: AIアシスタント作業の場合は`claude/`で始める
+- **メインブランチ**: 安定したコードのデフォルトブランチ
+- 常に指定された機能ブランチで開発
 
-### Commit Messages
+### コミットメッセージ
 
-**Pattern observed in history**:
-- Japanese language commit messages
-- Descriptive and concise
-- Examples:
+**履歴で観察されたパターン**:
+- 日本語のコミットメッセージ
+- 説明的で簡潔
+- 例:
   - "GeminiCodeAssistのプルリクエストレビューの日本語化設定を追加"
   - "READMEを追加"
   - "カスタムインストラクションの追加"
 
-**Best practices**:
-- Write clear, descriptive messages
-- Use Japanese (to match existing pattern)
-- Focus on "what" and "why" rather than "how"
+**ベストプラクティス**:
+- 明確で説明的なメッセージを書く
+- 日本語を使用（既存のパターンに合わせる）
+- 「どのように」よりも「何を」「なぜ」に焦点を当てる
 
-### Workflow
+### ワークフロー
 
-1. Make changes on feature branch
-2. Test thoroughly in browser
-3. Commit with descriptive message
-4. Push to remote: `git push -u origin <branch-name>`
-5. Create pull request when ready
+1. 機能ブランチで変更を加える
+2. ブラウザで徹底的にテスト
+3. 説明的なメッセージでコミット
+4. リモートにプッシュ: `git push -u origin <branch-name>`
+5. 準備ができたらプルリクエストを作成
 
-## Common Tasks for AI Assistants
+## AIアシスタントの一般的なタスク
 
-### Adding a New Feature
+### 新機能の追加
 
-1. **Read existing code first**: Never propose changes without understanding current implementation
-2. **Follow existing patterns**: Match the style in app.js
-3. **Update data structure if needed**: Modify ToDo object schema in localStorage
-4. **Test in browser**: Verify functionality works end-to-end
-5. **Update documentation**: Modify this CLAUDE.md file if architecture changes
+1. **最初に既存のコードを読む**: 現在の実装を理解せずに変更を提案しない
+2. **既存のパターンに従う**: app.jsのスタイルに合わせる
+3. **必要に応じてデータ構造を更新**: localStorageのToDoオブジェクトスキーマを変更
+4. **ブラウザでテスト**: 機能がエンドツーエンドで動作することを確認
+5. **ドキュメントを更新**: アーキテクチャが変更された場合、このCLAUDE.mdファイルを修正
 
-### Refactoring Guidelines
+### リファクタリングガイドライン
 
-⚠️ **Avoid over-engineering**:
-- Don't add features not explicitly requested
-- Don't add TypeScript, bundlers, or frameworks unless asked
-- Don't add excessive error handling for impossible scenarios
-- Keep it simple - this is a learning/demo project
+⚠️ **過剰なエンジニアリングを避ける**:
+- 明示的に要求されていない機能を追加しない
+- 依頼されない限りTypeScript、バンドラー、フレームワークを追加しない
+- 起こりえないシナリオのための過剰なエラー処理を追加しない
+- シンプルに保つ - これは学習/デモプロジェクト
 
-✅ **Good refactorings**:
-- Extract repeated code into functions
-- Improve accessibility (ARIA labels, keyboard navigation)
-- Add meaningful comments for complex logic
-- Improve security (input validation, CSP headers if deploying)
+✅ **良いリファクタリング**:
+- 繰り返されるコードを関数に抽出
+- アクセシビリティを改善（ARIAラベル、キーボードナビゲーション）
+- 複雑なロジックに意味のあるコメントを追加
+- セキュリティを改善（入力検証、デプロイする場合はCSPヘッダー）
 
-### Bug Fix Workflow
+### バグ修正ワークフロー
 
-1. **Reproduce the bug**: Test in browser first
-2. **Identify root cause**: Use DevTools debugger
-3. **Make minimal fix**: Change only what's necessary
-4. **Verify fix**: Test the specific scenario
-5. **Check for regressions**: Test related functionality
+1. **バグを再現**: 最初にブラウザでテスト
+2. **根本原因を特定**: DevToolsデバッガーを使用
+3. **最小限の修正を行う**: 必要な部分のみ変更
+4. **修正を検証**: 特定のシナリオをテスト
+5. **リグレッションをチェック**: 関連機能をテスト
 
-### Code Review Considerations
+### コードレビューの考慮事項
 
-When reviewing or modifying code, check for:
-- **XSS vulnerabilities**: Ensure user input uses `textContent` not `innerHTML`
-- **Index bounds**: Verify array access with `todos[idx]` checks for existence
-- **Data consistency**: Ensure localStorage stays in sync with UI
-- **Japanese language**: UI text should remain in Japanese
-- **Tailwind classes**: Follow existing utility patterns
-- **Browser compatibility**: Test in modern browsers (Chrome, Firefox, Safari)
+コードをレビューまたは変更する際に確認すべき点：
+- **XSS脆弱性**: ユーザー入力が`innerHTML`ではなく`textContent`を使用していることを確認
+- **インデックス境界**: `todos[idx]`での配列アクセスの存在を確認
+- **データの一貫性**: localStorageがUIと同期していることを確認
+- **日本語**: UIテキストは日本語を維持
+- **Tailwindクラス**: 既存のユーティリティパターンに従う
+- **ブラウザ互換性**: モダンブラウザでテスト（Chrome、Firefox、Safari）
 
-## Important Caveats
+## 重要な注意事項
 
-### What NOT to do
+### やってはいけないこと
 
-- ❌ Don't add backend/API endpoints (project is client-side only)
-- ❌ Don't add build tools (Webpack, Vite, etc.) unless specifically requested
-- ❌ Don't convert to SPA framework (React, Vue) without explicit request
-- ❌ Don't add databases (the project uses localStorage intentionally)
-- ❌ Don't remove Japanese language (UI is intentionally in Japanese)
-- ❌ Don't add CDN alternatives without testing (Tailwind CSS CDN is required)
+- ❌ バックエンド/APIエンドポイントを追加しない（プロジェクトはクライアントサイドのみ）
+- ❌ 特に要求されない限りビルドツール（Webpack、Viteなど）を追加しない
+- ❌ 明示的な要求なしにSPAフレームワーク（React、Vue）に変換しない
+- ❌ データベースを追加しない（プロジェクトは意図的にlocalStorageを使用）
+- ❌ 日本語を削除しない（UIは意図的に日本語）
+- ❌ テストなしにCDNの代替を追加しない（Tailwind CSS CDNが必要）
 
-### Limitations to be aware of
+### 認識すべき制限事項
 
-- **localStorage limits**: ~5-10MB depending on browser
-- **No user isolation**: All users share same browser storage
-- **No sync**: Data is local to one browser
-- **Hardcoded auth**: Credentials are in source code (not production-ready)
-- **No validation**: Accepts any string input for title/detail
+- **localStorageの制限**: ブラウザによって約5-10MB
+- **ユーザー分離なし**: すべてのユーザーが同じブラウザストレージを共有
+- **同期なし**: データは1つのブラウザにローカル
+- **ハードコードされた認証**: 認証情報がソースコード内（本番環境には不適切）
+- **検証なし**: title/detailに任意の文字列入力を受け入れる
 
-## Deployment
+## デプロイ
 
-### Current State
+### 現在の状態
 
-No deployment configuration exists. The app runs directly from the filesystem.
+デプロイ設定は存在しません。アプリはファイルシステムから直接実行されます。
 
-### Potential Deployment Options
+### 潜在的なデプロイオプション
 
-If deployment is requested:
+デプロイが要求された場合：
 
 1. **GitHub Pages**:
-   - Static hosting (free)
-   - Perfect for this project
-   - No build step needed
+   - 静的ホスティング（無料）
+   - このプロジェクトに最適
+   - ビルドステップ不要
 
 2. **Netlify/Vercel**:
-   - Drop-in static hosting
-   - No configuration needed
+   - ドロップイン静的ホスティング
+   - 設定不要
 
-3. **Simple HTTP Server**:
+3. **シンプルHTTPサーバー**:
    - `python -m http.server`
    - `npx serve`
 
-**Note**: All options work since there's no backend to deploy.
+**注意**: バックエンドがないため、すべてのオプションが機能します。
 
-## AI Assistant Collaboration
+## AIアシスタント間の連携
 
-### Other AI Assistant Guides
+### 他のAIアシスタントガイド
 
-This project includes guides for multiple AI assistants:
+このプロジェクトには複数のAIアシスタント向けガイドが含まれています：
 
-- **.github/copilot-instructions.md**: GitHub Copilot (comprehensive, English)
-- **.gemini/styleguide.md**: Gemini Code Assist (Japanese responses requested)
-- **CLAUDE.md**: This file (Claude Code)
+- **.github/copilot-instructions.md**: GitHub Copilot（包括的、英語）
+- **.gemini/styleguide.md**: Gemini Code Assist（日本語応答を要求）
+- **CLAUDE.md**: このファイル（Claude Code）
 
-### Coordination Guidelines
+### 連携ガイドライン
 
-When working with other AI assistants or developers:
-- Read README.md and other AI guides to understand expectations
-- Maintain consistency with established patterns
-- Preserve Japanese language in UI
-- Keep the project simple and focused
+他のAIアシスタントや開発者と作業する場合：
+- README.mdや他のAIガイドを読んで期待事項を理解する
+- 確立されたパターンとの一貫性を維持
+- UIの日本語を保持
+- プロジェクトをシンプルで焦点を絞った状態に保つ
 
-### Communication Style
+### コミュニケーションスタイル
 
-- **Be concise**: Users are working in CLI environment
-- **Use code references**: Format as `file_path:line_number`
-- **Avoid assumptions**: Read code before suggesting changes
-- **Ask when uncertain**: Clarify requirements before implementing
+- **簡潔に**: ユーザーはCLI環境で作業している
+- **コード参照を使用**: `file_path:line_number`の形式
+- **推測を避ける**: 変更を提案する前にコードを読む
+- **不確かな場合は質問**: 実装前に要件を明確にする
 
-## Troubleshooting
+## トラブルシューティング
 
-### Common Issues
+### よくある問題
 
-**Problem**: Login doesn't work
-**Solution**: Check browser console for errors. Verify `js/app.js` is loading.
+**問題**: ログインが動作しない
+**解決策**: ブラウザコンソールでエラーを確認。`js/app.js`が読み込まれているか確認。
 
-**Problem**: ToDos disappear after refresh
-**Solution**: Check DevTools → Application → Local Storage. Verify `todos` key exists.
+**問題**: リフレッシュ後にToDoが消える
+**解決策**: DevTools → Application → Local Storageを確認。`todos`キーが存在するか確認。
 
-**Problem**: Styles not loading
-**Solution**: Verify internet connection (Tailwind CSS is via CDN). Check Network tab.
+**問題**: スタイルが読み込まれない
+**解決策**: インターネット接続を確認（Tailwind CSSはCDN経由）。Networkタブを確認。
 
-**Problem**: Can't edit existing ToDo
-**Solution**: Verify URL has `?idx=N` parameter. Check console for errors.
+**問題**: 既存のToDoを編集できない
+**解決策**: URLに`?idx=N`パラメータがあるか確認。コンソールでエラーを確認。
 
-**Problem**: Changes not appearing
-**Solution**: Hard refresh browser (Ctrl+Shift+R / Cmd+Shift+R) to clear cache.
+**問題**: 変更が表示されない
+**解決策**: ブラウザをハードリフレッシュ（Ctrl+Shift+R / Cmd+Shift+R）してキャッシュをクリア。
 
-## Changelog
+## 変更履歴
 
 ### 2025-11-28
-- Created comprehensive CLAUDE.md guide for AI assistants
-- Documented all functions, data structures, and workflows
-- Established coding conventions and common tasks
+- AIアシスタント向けの包括的なCLAUDE.mdガイドを作成
+- すべての関数、データ構造、ワークフローを文書化
+- コーディング規約と一般的なタスクを確立
+- ドキュメント全体を日本語に翻訳
 
 ---
 
-**Last Updated**: 2025-11-28
-**Maintained by**: AI assistants working on this repository
-**Questions?**: Refer to README.md for user documentation or app.js for implementation details
+**最終更新**: 2025-11-28
+**メンテナンス**: このリポジトリで作業するAIアシスタント
+**質問？**: ユーザー向けドキュメントはREADME.md、実装の詳細はapp.jsを参照してください

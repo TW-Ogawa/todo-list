@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ログイン | ToDoアプリ</title>
+  <!-- Tailwind Play CDN を利用 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-sm">
+    <h1 class="text-2xl font-bold mb-6 text-center">ToDoアプリ ログイン</h1>
+    <form id="loginForm" class="space-y-4">
+      <div class="relative">
+        <label class="block mb-1 font-medium" for="username">ユーザー名</label>
+        <input
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          type="text" id="username" placeholder="ユーザー名を入力" required>
+      </div>
+      <div class="relative">
+        <label class="block mb-1 font-medium" for="password">パスワード</label>
+        <input
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          type="password" id="password" placeholder="パスワードを入力" required>
+      </div>
+      <button type="submit"
+        class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition">ログイン</button>
+    </form>
+    <p id="loginError" class="text-red-500 text-sm mt-4 hidden">ユーザー名またはパスワードが違います。</p>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+
+</html>

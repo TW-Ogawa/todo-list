@@ -26,6 +26,23 @@ function logout() {
 
 // --- Data Management ---
 
+function escapeHTML(str) {
+  if (!str) return '';
+  return str.replace(/[&<>"']/g, function(match) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[match];
+  });
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
 function getTodos() {
   return JSON.parse(localStorage.getItem('todos') || '[]');
 }
@@ -98,6 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. ToDo List Page
   const todoList = document.getElementById('todoList');
   if (todoList) {
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', () => renderTodos());
     renderTodos();
   }
 });
@@ -111,18 +130,21 @@ function renderTodos() {
   const list = document.getElementById('todoList');
   if (!list) return;
 
-  list.innerHTML = '';
+  const searchInput = document.getElementById('searchInput');
+  const searchTerm = searchInput.value.toLowerCase();
 
-  if (todos.length === 0) {
-    list.innerHTML = '<li class="text-gray-500">ToDoがありません。</li>';
-    return;
-  }
+  list.innerHTML = '';
+  let itemsFound = false;
 
   todos.forEach((todo, idx) => {
-    const li = document.createElement('li');
+    const titleMatch = todo.title && todo.title.toLowerCase().includes(searchTerm);
+    const detailMatch = todo.detail && todo.detail.toLowerCase().includes(searchTerm);
+
+    if (!searchTerm || titleMatch || detailMatch) {
+      itemsFound = true;
+      const li = document.createElement('li');
     li.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
 
-    // Checkbox
     const checkboxDiv = document.createElement('div');
     checkboxDiv.className = 'flex items-center';
     
@@ -137,12 +159,23 @@ function renderTodos() {
     const titleDiv = document.createElement('div');
     titleDiv.className = 'font-medium';
     if (todo.checked) titleDiv.classList.add('line-through', 'text-gray-400');
-    titleDiv.textContent = todo.title; // Secure: textContent prevents XSS
 
     const detailDiv = document.createElement('div');
     detailDiv.className = 'text-gray-500 text-sm';
     if (todo.checked) detailDiv.classList.add('line-through', 'text-gray-400');
-    detailDiv.textContent = todo.detail || ''; // Secure
+
+    // Highlighting
+    if (searchTerm) {
+      const safeSearchTerm = escapeRegExp(searchTerm);
+      const regex = new RegExp(safeSearchTerm, 'gi');
+      const highlightedTitle = escapeHTML(todo.title || '').replace(regex, `<span class="bg-yellow-200">$&</span>`);
+      const highlightedDetail = escapeHTML(todo.detail || '').replace(regex, `<span class="bg-yellow-200">$&</span>`);
+      titleDiv.innerHTML = highlightedTitle;
+      detailDiv.innerHTML = highlightedDetail;
+    } else {
+      titleDiv.textContent = todo.title;
+      detailDiv.textContent = todo.detail || '';
+    }
 
     textDiv.appendChild(titleDiv);
     textDiv.appendChild(detailDiv);
@@ -150,7 +183,6 @@ function renderTodos() {
     checkboxDiv.appendChild(checkbox);
     checkboxDiv.appendChild(textDiv);
 
-    // Actions
     const actionsDiv = document.createElement('div');
     actionsDiv.className = 'flex space-x-2';
 
@@ -170,7 +202,12 @@ function renderTodos() {
     li.appendChild(checkboxDiv);
     li.appendChild(actionsDiv);
     list.appendChild(li);
+    }
   });
+
+  if (!itemsFound) {
+    list.innerHTML = '<li class="text-gray-500">該当するToDoがありません。</li>';
+  }
 }
 
 function toggleCheck(idx) {

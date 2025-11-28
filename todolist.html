@@ -15,7 +15,14 @@
       <h1 class="text-2xl font-bold">ToDo一覧</h1>
       <button id="logoutBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">ログアウト</button>
     </div>
-    <div class="mb-4 flex justify-end">
+    <div class="mb-4 flex justify-between items-center">
+      <div class="flex items-center">
+        <label for="sortOrder" class="mr-2">ソート順:</label>
+        <select id="sortOrder" class="border border-gray-300 rounded px-3 py-1">
+          <option value="default">デフォルト</option>
+          <option value="dueDate">期限が近い順</option>
+        </select>
+      </div>
       <a href="edit.html" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">新規作成</a>
     </div>
     <ul id="todoList" class="space-y-4">

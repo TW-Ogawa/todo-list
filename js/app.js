@@ -78,17 +78,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idx !== null && todos[idx]) {
       document.getElementById('title').value = todos[idx].title;
       document.getElementById('detail').value = todos[idx].detail || '';
+      document.getElementById('dueDate').value = todos[idx].dueDate || '';
     }
 
     todoForm.addEventListener('submit', function(e) {
       e.preventDefault();
       const title = document.getElementById('title').value;
       const detail = document.getElementById('detail').value;
+      const dueDate = document.getElementById('dueDate').value;
 
       if (idx !== null && todos[idx]) {
-        todos[idx] = { ...todos[idx], title, detail }; // Preserve other props like 'checked'
+        todos[idx] = { ...todos[idx], title, detail, dueDate }; // Preserve other props like 'checked'
       } else {
-        todos.push({ title, detail, checked: false });
+        todos.push({ title, detail, dueDate, checked: false });
       }
       saveTodos(todos);
       window.location.href = 'todolist.html';
@@ -98,31 +100,66 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. ToDo List Page
   const todoList = document.getElementById('todoList');
   if (todoList) {
+    // Initial render
     renderTodos();
+
+    // Attach event listener for sorting
+    const sortOrder = document.getElementById('sortOrder');
+    if (sortOrder) {
+      sortOrder.addEventListener('change', () => renderTodos());
+    }
   }
 });
 
-// --- Rendering & Actions (Exposed to global for inline event handlers if needed, but we prefer event delegation or re-attaching) ---
-// Since we are moving away from inline handlers like onclick="deleteTodo()", we need to handle events carefully.
-// We will attach event listeners during render or use delegation.
+// --- Rendering & Actions ---
 
 function renderTodos() {
-  const todos = getTodos();
+  let todos = getTodos();
   const list = document.getElementById('todoList');
-  if (!list) return;
+  const sortOrder = document.getElementById('sortOrder')?.value;
 
+  const originalTodos = getTodos(); // Get original for index mapping
+
+  // Create a mappable/sortable array
+  let processedTodos = todos.map((todo, index) => ({ ...todo, originalIndex: index }));
+
+  // Sorting Logic
+  if (sortOrder === 'dueDate') {
+    processedTodos.sort((a, b) => {
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate) - new Date(b.dueDate);
+    });
+  }
+
+  if (!list) return;
   list.innerHTML = '';
 
-  if (todos.length === 0) {
+  if (processedTodos.length === 0) {
     list.innerHTML = '<li class="text-gray-500">ToDoがありません。</li>';
     return;
   }
 
-  todos.forEach((todo, idx) => {
+  processedTodos.forEach(todo => {
     const li = document.createElement('li');
+    const originalIdx = todo.originalIndex;
     li.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
+    li.dataset.idx = originalIdx; // Keep track of the original index
 
-    // Checkbox
+    // --- Duedate Logic ---
+    if (todo.dueDate && !todo.checked) {
+      const dueDate = new Date(todo.dueDate);
+      const today = new Date();
+      // Reset time part for accurate date comparison
+      today.setHours(0, 0, 0, 0);
+      dueDate.setHours(0, 0, 0, 0);
+
+      if (dueDate < today) {
+        li.classList.add('border-2', 'border-red-500'); // Overdue visual cue
+      }
+    }
+
+    // Checkbox and Text
     const checkboxDiv = document.createElement('div');
     checkboxDiv.className = 'flex items-center';
     
@@ -130,22 +167,30 @@ function renderTodos() {
     checkbox.type = 'checkbox';
     checkbox.className = 'mr-4 w-5 h-5 accent-blue-500';
     checkbox.checked = todo.checked || false;
-    checkbox.addEventListener('change', () => toggleCheck(idx));
+    checkbox.addEventListener('change', () => toggleCheck(originalIdx));
     
     const textDiv = document.createElement('div');
     
     const titleDiv = document.createElement('div');
     titleDiv.className = 'font-medium';
     if (todo.checked) titleDiv.classList.add('line-through', 'text-gray-400');
-    titleDiv.textContent = todo.title; // Secure: textContent prevents XSS
+    titleDiv.textContent = todo.title;
 
     const detailDiv = document.createElement('div');
     detailDiv.className = 'text-gray-500 text-sm';
     if (todo.checked) detailDiv.classList.add('line-through', 'text-gray-400');
-    detailDiv.textContent = todo.detail || ''; // Secure
+    detailDiv.textContent = todo.detail || '';
 
     textDiv.appendChild(titleDiv);
     textDiv.appendChild(detailDiv);
+
+    // Due Date Display
+    if (todo.dueDate) {
+      const dueDateDiv = document.createElement('div');
+      dueDateDiv.className = 'text-gray-500 text-xs mt-1';
+      dueDateDiv.textContent = `期限: ${todo.dueDate}`;
+      textDiv.appendChild(dueDateDiv);
+    }
     
     checkboxDiv.appendChild(checkbox);
     checkboxDiv.appendChild(textDiv);
@@ -155,14 +200,14 @@ function renderTodos() {
     actionsDiv.className = 'flex space-x-2';
 
     const editLink = document.createElement('a');
-    editLink.href = `edit.html?idx=${idx}`;
+    editLink.href = `edit.html?idx=${originalIdx}`;
     editLink.className = 'bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600';
     editLink.textContent = '編集';
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600';
     deleteBtn.textContent = '削除';
-    deleteBtn.addEventListener('click', () => deleteTodo(idx));
+    deleteBtn.addEventListener('click', () => deleteTodo(originalIdx));
 
     actionsDiv.appendChild(editLink);
     actionsDiv.appendChild(deleteBtn);

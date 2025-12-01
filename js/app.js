@@ -74,22 +74,115 @@ document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const idx = params.has('idx') ? parseInt(params.get('idx')) : null;
     const todos = getTodos();
+    const todo = (idx !== null && todos[idx]) ? todos[idx] : null;
 
-    if (idx !== null && todos[idx]) {
-      document.getElementById('title').value = todos[idx].title;
-      document.getElementById('detail').value = todos[idx].detail || '';
+    // --- Temporary state for notes and links ---
+    let currentNotes = todo ? [...(todo.notes || [])] : [];
+    let currentLinks = todo ? [...(todo.links || [])] : [];
+
+    // --- DOM Elements ---
+    const titleInput = document.getElementById('title');
+    const detailInput = document.getElementById('detail');
+    const noteInput = document.getElementById('note-input');
+    const addNoteBtn = document.getElementById('add-note-btn');
+    const notesList = document.getElementById('notes-list');
+    const linkInput = document.getElementById('link-input');
+    const addLinkBtn = document.getElementById('add-link-btn');
+    const linkError = document.getElementById('link-error');
+    const linksList = document.getElementById('links-list');
+
+    // --- Render Functions ---
+    const renderNotes = () => {
+      notesList.innerHTML = '';
+      currentNotes.forEach((note, index) => {
+        const li = document.createElement('li');
+        li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded';
+        li.textContent = note;
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '削除';
+        deleteBtn.className = 'text-red-500 text-sm hover:underline';
+        deleteBtn.onclick = () => {
+          currentNotes.splice(index, 1);
+          renderNotes();
+        };
+        li.appendChild(deleteBtn);
+        notesList.appendChild(li);
+      });
+    };
+
+    const renderLinks = () => {
+      linksList.innerHTML = '';
+      currentLinks.forEach((link, index) => {
+        const li = document.createElement('li');
+        li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded';
+        const a = document.createElement('a');
+        a.href = link;
+        a.textContent = link;
+        a.target = '_blank';
+        a.className = 'text-blue-500 hover:underline truncate';
+        li.appendChild(a);
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '削除';
+        deleteBtn.className = 'text-red-500 text-sm hover:underline';
+        deleteBtn.onclick = () => {
+          currentLinks.splice(index, 1);
+          renderLinks();
+        };
+        li.appendChild(deleteBtn);
+        linksList.appendChild(li);
+      });
+    };
+
+    // --- Initial Population ---
+    if (todo) {
+      titleInput.value = todo.title;
+      detailInput.value = todo.detail || '';
     }
+    renderNotes();
+    renderLinks();
+
+    // --- Event Listeners ---
+    addNoteBtn.addEventListener('click', () => {
+      const noteText = noteInput.value.trim();
+      if (noteText) {
+        currentNotes.push(noteText);
+        noteInput.value = '';
+        renderNotes();
+      }
+    });
+
+    addLinkBtn.addEventListener('click', () => {
+      const linkUrl = linkInput.value.trim();
+      if (isValidUrl(linkUrl)) {
+        currentLinks.push(linkUrl);
+        linkInput.value = '';
+        linkError.classList.add('hidden');
+        renderLinks();
+      } else {
+        linkError.classList.remove('hidden');
+      }
+    });
 
     todoForm.addEventListener('submit', function(e) {
       e.preventDefault();
-      const title = document.getElementById('title').value;
-      const detail = document.getElementById('detail').value;
+      const title = titleInput.value;
+      const detail = detailInput.value;
+
+      const newTodoData = {
+        title,
+        detail,
+        notes: currentNotes,
+        links: currentLinks
+      };
 
       if (idx !== null && todos[idx]) {
-        todos[idx] = { ...todos[idx], title, detail }; // Preserve other props like 'checked'
+        // Update existing ToDo, preserving checked status
+        todos[idx] = { ...todos[idx], ...newTodoData };
       } else {
-        todos.push({ title, detail, checked: false });
+        // Create new ToDo
+        todos.push({ ...newTodoData, checked: false });
       }
+
       saveTodos(todos);
       window.location.href = 'todolist.html';
     });
@@ -120,15 +213,18 @@ function renderTodos() {
 
   todos.forEach((todo, idx) => {
     const li = document.createElement('li');
-    li.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
+    li.className = 'bg-white p-4 rounded shadow'; // Removed flex from here
 
-    // Checkbox
+    const mainDiv = document.createElement('div');
+    mainDiv.className = 'flex justify-between items-center';
+
+    // Checkbox & Text
     const checkboxDiv = document.createElement('div');
     checkboxDiv.className = 'flex items-center';
     
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.className = 'mr-4 w-5 h-5 accent-blue-500';
+    checkbox.className = 'mr-4 w-5 h-5 accent-blue-500 flex-shrink-0';
     checkbox.checked = todo.checked || false;
     checkbox.addEventListener('change', () => toggleCheck(idx));
     
@@ -137,12 +233,12 @@ function renderTodos() {
     const titleDiv = document.createElement('div');
     titleDiv.className = 'font-medium';
     if (todo.checked) titleDiv.classList.add('line-through', 'text-gray-400');
-    titleDiv.textContent = todo.title; // Secure: textContent prevents XSS
+    titleDiv.textContent = todo.title;
 
     const detailDiv = document.createElement('div');
     detailDiv.className = 'text-gray-500 text-sm';
     if (todo.checked) detailDiv.classList.add('line-through', 'text-gray-400');
-    detailDiv.textContent = todo.detail || ''; // Secure
+    detailDiv.textContent = todo.detail || '';
 
     textDiv.appendChild(titleDiv);
     textDiv.appendChild(detailDiv);
@@ -152,7 +248,16 @@ function renderTodos() {
 
     // Actions
     const actionsDiv = document.createElement('div');
-    actionsDiv.className = 'flex space-x-2';
+    actionsDiv.className = 'flex space-x-2 flex-shrink-0 ml-4';
+
+    const hasNotesOrLinks = (todo.notes && todo.notes.length > 0) || (todo.links && todo.links.length > 0);
+
+    if (hasNotesOrLinks) {
+      const detailsBtn = document.createElement('button');
+      detailsBtn.className = 'bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 text-sm';
+      detailsBtn.textContent = '詳細';
+      actionsDiv.appendChild(detailsBtn);
+    }
 
     const editLink = document.createElement('a');
     editLink.href = `edit.html?idx=${idx}`;
@@ -167,8 +272,61 @@ function renderTodos() {
     actionsDiv.appendChild(editLink);
     actionsDiv.appendChild(deleteBtn);
 
-    li.appendChild(checkboxDiv);
-    li.appendChild(actionsDiv);
+    mainDiv.appendChild(checkboxDiv);
+    mainDiv.appendChild(actionsDiv);
+    li.appendChild(mainDiv);
+
+    // Accordion Content for Notes and Links
+    if (hasNotesOrLinks) {
+      const accordionContent = document.createElement('div');
+      accordionContent.className = 'hidden mt-4 pt-4 border-t border-gray-200';
+
+      // Notes
+      if (todo.notes && todo.notes.length > 0) {
+        const notesTitle = document.createElement('h4');
+        notesTitle.className = 'font-semibold text-sm mb-2';
+        notesTitle.textContent = 'メモ';
+        const notesUl = document.createElement('ul');
+        notesUl.className = 'list-disc list-inside space-y-1 text-gray-700';
+        todo.notes.forEach(note => {
+          const noteLi = document.createElement('li');
+          noteLi.textContent = note;
+          notesUl.appendChild(noteLi);
+        });
+        accordionContent.appendChild(notesTitle);
+        accordionContent.appendChild(notesUl);
+      }
+
+      // Links
+      if (todo.links && todo.links.length > 0) {
+        const linksTitle = document.createElement('h4');
+        linksTitle.className = 'font-semibold text-sm mt-3 mb-2';
+        linksTitle.textContent = 'リンク';
+        const linksUl = document.createElement('ul');
+        linksUl.className = 'space-y-1';
+        todo.links.forEach(link => {
+          const linkLi = document.createElement('li');
+          const linkA = document.createElement('a');
+          linkA.href = link;
+          linkA.target = '_blank';
+          linkA.className = 'text-blue-500 hover:underline';
+          linkA.textContent = link;
+          linkLi.appendChild(linkA);
+          linksUl.appendChild(linkLi);
+        });
+        accordionContent.appendChild(linksTitle);
+        accordionContent.appendChild(linksUl);
+      }
+
+      li.appendChild(accordionContent);
+
+      // Accordion Toggle Logic
+      const detailsBtn = actionsDiv.querySelector('button'); // find the details button
+      detailsBtn.addEventListener('click', () => {
+        accordionContent.classList.toggle('hidden');
+      });
+    }
+
     list.appendChild(li);
   });
 }
@@ -188,4 +346,13 @@ function deleteTodo(idx) {
   todos.splice(idx, 1);
   saveTodos(todos);
   renderTodos();
+}
+
+function isValidUrl(string) {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
 }

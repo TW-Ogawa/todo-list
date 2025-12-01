@@ -2,6 +2,21 @@
  * ToDo App Logic
  */
 
+// --- Priority Constants ---
+
+// Priority order for sorting (high = 1, medium = 2, low = 3)
+const priorityOrder = { high: 1, medium: 2, low: 3 };
+
+// Default priority value
+const DEFAULT_PRIORITY = 'medium';
+
+// Priority display names and CSS classes
+const priorityConfig = {
+  high: { label: '高', bgClass: 'bg-red-100', borderClass: 'border-l-4 border-red-500', textClass: 'text-red-600' },
+  medium: { label: '中', bgClass: 'bg-yellow-50', borderClass: 'border-l-4 border-yellow-500', textClass: 'text-yellow-600' },
+  low: { label: '低', bgClass: 'bg-green-50', borderClass: 'border-l-4 border-green-500', textClass: 'text-green-600' }
+};
+
 // --- Authentication ---
 
 function checkLogin() {
@@ -78,17 +93,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idx !== null && todos[idx]) {
       document.getElementById('title').value = todos[idx].title;
       document.getElementById('detail').value = todos[idx].detail || '';
+      // Set priority radio button
+      const priority = todos[idx].priority || DEFAULT_PRIORITY;
+      const priorityRadio = document.querySelector(`input[name="priority"][value="${priority}"]`);
+      if (priorityRadio) priorityRadio.checked = true;
     }
 
     todoForm.addEventListener('submit', function(e) {
       e.preventDefault();
       const title = document.getElementById('title').value;
       const detail = document.getElementById('detail').value;
+      const priorityRadio = document.querySelector('input[name="priority"]:checked');
+      const priority = priorityRadio ? priorityRadio.value : DEFAULT_PRIORITY;
 
       if (idx !== null && todos[idx]) {
-        todos[idx] = { ...todos[idx], title, detail }; // Preserve other props like 'checked'
+        todos[idx] = { ...todos[idx], title, detail, priority }; // Preserve other props like 'checked'
       } else {
-        todos.push({ title, detail, checked: false });
+        todos.push({ title, detail, checked: false, priority });
       }
       saveTodos(todos);
       window.location.href = 'todolist.html';
@@ -99,6 +120,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const todoList = document.getElementById('todoList');
   if (todoList) {
     renderTodos();
+    
+    // Sort by priority button
+    const sortBtn = document.getElementById('sortByPriorityBtn');
+    if (sortBtn) {
+      sortBtn.addEventListener('click', sortByPriority);
+    }
   }
 });
 
@@ -119,8 +146,11 @@ function renderTodos() {
   }
 
   todos.forEach((todo, idx) => {
+    const priority = todo.priority || DEFAULT_PRIORITY;
+    const config = priorityConfig[priority] || priorityConfig[DEFAULT_PRIORITY];
+    
     const li = document.createElement('li');
-    li.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
+    li.className = `${config.bgClass} ${config.borderClass} p-4 rounded shadow flex justify-between items-center`;
 
     // Checkbox
     const checkboxDiv = document.createElement('div');
@@ -134,10 +164,20 @@ function renderTodos() {
     
     const textDiv = document.createElement('div');
     
+    // Priority badge
+    const priorityBadge = document.createElement('span');
+    priorityBadge.className = `${config.textClass} text-xs font-bold mr-2 px-2 py-0.5 rounded`;
+    priorityBadge.textContent = config.label;
+    
     const titleDiv = document.createElement('div');
-    titleDiv.className = 'font-medium';
+    titleDiv.className = 'font-medium flex items-center';
     if (todo.checked) titleDiv.classList.add('line-through', 'text-gray-400');
-    titleDiv.textContent = todo.title; // Secure: textContent prevents XSS
+    
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = todo.title; // Secure: textContent prevents XSS
+    
+    titleDiv.appendChild(priorityBadge);
+    titleDiv.appendChild(titleSpan);
 
     const detailDiv = document.createElement('div');
     detailDiv.className = 'text-gray-500 text-sm';
@@ -186,6 +226,18 @@ function deleteTodo(idx) {
   if (!confirm('本当に削除しますか？')) return;
   const todos = getTodos();
   todos.splice(idx, 1);
+  saveTodos(todos);
+  renderTodos();
+}
+
+function sortByPriority() {
+  const todos = getTodos();
+  const defaultPriorityValue = priorityOrder[DEFAULT_PRIORITY];
+  todos.sort((a, b) => {
+    const priorityA = priorityOrder[a.priority] || defaultPriorityValue;
+    const priorityB = priorityOrder[b.priority] || defaultPriorityValue;
+    return priorityA - priorityB;
+  });
   saveTodos(todos);
   renderTodos();
 }

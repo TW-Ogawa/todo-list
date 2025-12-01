@@ -43,7 +43,7 @@ function getTemplates() {
 function saveTemplate(template) {
   const templates = getTemplates();
   templates.push({
-    id: Date.now(),
+    id: crypto.randomUUID(),
     title: template.title,
     detail: template.detail || ''
   });

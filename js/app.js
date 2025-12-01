@@ -37,6 +37,39 @@ function saveTodos(todos) {
 // --- Page Specific Logic ---
 
 document.addEventListener('DOMContentLoaded', () => {
+  // --- Theme Toggle UI Handler ---
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  if (themeToggleBtn) {
+    const lightIcon = document.getElementById('theme-icon-light');
+    const darkIcon = document.getElementById('theme-icon-dark');
+    const autoIcon = document.getElementById('theme-icon-auto');
+
+    // Updates the icon visibility based on the current theme
+    const updateIcon = (theme) => {
+      lightIcon.classList.toggle('hidden', theme !== 'light');
+      darkIcon.classList.toggle('hidden', theme !== 'dark');
+      autoIcon.classList.toggle('hidden', theme !== 'auto');
+    };
+
+    // Set initial icon
+    updateIcon(themeManager.getTheme());
+
+    // Cycle through themes: auto -> light -> dark -> auto
+    themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = themeManager.getTheme();
+      let newTheme;
+      if (currentTheme === 'auto') {
+        newTheme = 'light';
+      } else if (currentTheme === 'light') {
+        newTheme = 'dark';
+      } else {
+        newTheme = 'auto';
+      }
+      themeManager.setTheme(newTheme);
+      updateIcon(newTheme);
+    });
+  }
+
   const path = window.location.pathname;
   const page = path.split('/').pop();
 
@@ -120,7 +153,7 @@ function renderTodos() {
 
   todos.forEach((todo, idx) => {
     const li = document.createElement('li');
-    li.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
+    li.className = 'bg-white dark:bg-gray-800 p-4 rounded shadow flex justify-between items-center';
 
     // Checkbox
     const checkboxDiv = document.createElement('div');
@@ -136,12 +169,12 @@ function renderTodos() {
     
     const titleDiv = document.createElement('div');
     titleDiv.className = 'font-medium';
-    if (todo.checked) titleDiv.classList.add('line-through', 'text-gray-400');
+    if (todo.checked) titleDiv.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
     titleDiv.textContent = todo.title; // Secure: textContent prevents XSS
 
     const detailDiv = document.createElement('div');
-    detailDiv.className = 'text-gray-500 text-sm';
-    if (todo.checked) detailDiv.classList.add('line-through', 'text-gray-400');
+    detailDiv.className = 'text-gray-500 dark:text-gray-400 text-sm';
+    if (todo.checked) detailDiv.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
     detailDiv.textContent = todo.detail || ''; // Secure
 
     textDiv.appendChild(titleDiv);

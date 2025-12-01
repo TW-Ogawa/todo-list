@@ -41,7 +41,7 @@ let currentFilterTag = null;
 
 function parseTags(tagsInput) {
   if (!tagsInput || typeof tagsInput !== 'string') return [];
-  return tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+  return [...new Set(tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== ''))];
 }
 
 function getAllTags() {
@@ -187,25 +187,19 @@ function renderTodos() {
   list.innerHTML = '';
 
   // Filter by tag if a filter is set
-  let filteredTodos = todos;
+  let filteredTodosWithIdx = todos.map((todo, idx) => ({ todo, originalIdx: idx }));
   if (currentFilterTag !== null) {
-    filteredTodos = todos.filter(todo => 
+    filteredTodosWithIdx = filteredTodosWithIdx.filter(({ todo }) => 
       todo.tags && Array.isArray(todo.tags) && todo.tags.includes(currentFilterTag)
     );
   }
 
-  // Get indices for the original todos array (for edit/delete operations)
-  const todosWithIdx = filteredTodos.map(todo => {
-    const originalIdx = todos.indexOf(todo);
-    return { todo, originalIdx };
-  });
-
-  if (todosWithIdx.length === 0) {
+  if (filteredTodosWithIdx.length === 0) {
     list.innerHTML = '<li class="text-gray-500">ToDoがありません。</li>';
     return;
   }
 
-  todosWithIdx.forEach(({ todo, originalIdx }) => {
+  filteredTodosWithIdx.forEach(({ todo, originalIdx }) => {
     const li = document.createElement('li');
     li.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
 

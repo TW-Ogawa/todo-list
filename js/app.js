@@ -99,6 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const todoList = document.getElementById('todoList');
   if (todoList) {
     renderTodos();
+    // Add event listeners for new buttons
+    document.getElementById('exportJsonBtn').addEventListener('click', exportJson);
+    document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
+    document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change', importFile);
   }
 });
 
@@ -188,4 +193,145 @@ function deleteTodo(idx) {
   todos.splice(idx, 1);
   saveTodos(todos);
   renderTodos();
+}
+
+// --- Export/Import ---
+
+function exportJson() {
+  const todos = getTodos();
+  const dataStr = JSON.stringify(todos, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'todos.json';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCsv() {
+  const todos = getTodos();
+  const header = ['title', 'detail', 'checked'];
+  const csvRows = [
+    header.join(','),
+    ...todos.map(todo => [
+        `"${todo.title.replace(/"/g, '""')}"`,
+        `"${(todo.detail || '').replace(/"/g, '""')}"`,
+        todo.checked
+      ].join(','))
+  ];
+  const csvString = csvRows.join('\n');
+  const dataBlob = new Blob([csvString], { type: 'text/csv' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'todos.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function parseJson(content) {
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    throw new Error('JSONの解析に失敗しました。');
+  }
+}
+
+function parseCsv(content) {
+  const lines = content.trim().split(/\r?\n/);
+  const header = lines.shift();
+
+  if (header !== 'title,detail,checked') {
+    throw new Error('無効なCSVヘッダーです。ヘッダーは "title,detail,checked" である必要があります。');
+  }
+
+  return lines.map((line, index) => {
+    // This is a simple parser assuming the format we export.
+    // It may not work for all CSVs, but it's good enough for our purposes.
+    // Handles quoted titles and details.
+    const regex = /"((?:[^"]|"")*)"|([^,]+)|(true|false)/g;
+    let match;
+    const parts = [];
+    while(match = regex.exec(line)) {
+        if(match[0] === ',') continue;
+        parts.push(match[1] ? match[1].replace(/""/g, '"') : match[2] || match[3]);
+    }
+
+    if (parts.length !== 3) {
+      console.warn(`無効なCSV行 #${index + 1} をスキップします:`, line);
+      return null;
+    }
+
+    return {
+      title: parts[0],
+      detail: parts[1],
+      checked: parts[2] === 'true'
+    };
+  }).filter(todo => todo !== null); // Remove nulls from skipped lines
+}
+
+function validateTodos(todos) {
+  if (!Array.isArray(todos)) {
+    return false;
+  }
+  return todos.every(todo =>
+    typeof todo === 'object' &&
+    todo !== null &&
+    typeof todo.title === 'string' &&
+    (typeof todo.detail === 'string' || typeof todo.detail === 'undefined') &&
+    typeof todo.checked === 'boolean'
+  );
+}
+
+function importFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const content = e.target.result;
+    try {
+      let importedTodos;
+      if (file.name.endsWith('.json')) {
+        importedTodos = parseJson(content);
+      } else if (file.name.endsWith('.csv')) {
+        importedTodos = parseCsv(content);
+      } else {
+        throw new Error('サポートされていないファイル形式です。.json または .csv ファイルを選択してください。');
+      }
+
+      if (!validateTodos(importedTodos)) {
+        throw new Error('ファイルの内容が不正か、ToDoアイテムの形式が正しくありません。');
+      }
+
+      const existingTodos = getTodos();
+      const newTodos = importedTodos.filter(imported =>
+        !existingTodos.some(existing =>
+          existing.title === imported.title && existing.detail === imported.detail
+        )
+      );
+
+      if (importedTodos.length > 0 && newTodos.length === 0) {
+        alert('インポートされたToDoはすべて既存のリストに存在します。');
+        return;
+      }
+
+      const mergedTodos = existingTodos.concat(newTodos);
+      saveTodos(mergedTodos);
+      renderTodos();
+      alert(`${newTodos.length}件の新しいToDoがインポートされました。`);
+
+    } catch (error) {
+      alert(`インポートに失敗しました: ${error.message}`);
+    } finally {
+      // Reset file input to allow re-uploading the same file
+      event.target.value = '';
+    }
+  };
+  reader.onerror = function() {
+    alert('ファイルの読み込み中にエラーが発生しました。');
+    event.target.value = '';
+  };
+  reader.readAsText(file);
 }

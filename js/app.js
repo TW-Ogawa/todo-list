@@ -34,6 +34,71 @@ function saveTodos(todos) {
   localStorage.setItem('todos', JSON.stringify(todos));
 }
 
+// --- Tag Management ---
+
+// Current filter tag (null means show all)
+let currentFilterTag = null;
+
+function parseTags(tagsInput) {
+  if (!tagsInput || typeof tagsInput !== 'string') return [];
+  return tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+}
+
+function getAllTags() {
+  const todos = getTodos();
+  const tagSet = new Set();
+  todos.forEach(todo => {
+    if (todo.tags && Array.isArray(todo.tags)) {
+      todo.tags.forEach(tag => tagSet.add(tag));
+    }
+  });
+  return Array.from(tagSet).sort();
+}
+
+function setFilterTag(tag) {
+  currentFilterTag = tag;
+  renderTagCloud();
+  renderTodos();
+}
+
+function clearFilterTag() {
+  currentFilterTag = null;
+  renderTagCloud();
+  renderTodos();
+}
+
+function renderTagCloud() {
+  const tagCloudDiv = document.getElementById('tagCloud');
+  if (!tagCloudDiv) return;
+
+  const allTags = getAllTags();
+  tagCloudDiv.innerHTML = '';
+
+  if (allTags.length === 0) {
+    return;
+  }
+
+  // Add "All" button
+  const allBtn = document.createElement('button');
+  allBtn.className = currentFilterTag === null 
+    ? 'bg-blue-500 text-white px-3 py-1 rounded text-sm'
+    : 'bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300';
+  allBtn.textContent = 'すべて';
+  allBtn.addEventListener('click', clearFilterTag);
+  tagCloudDiv.appendChild(allBtn);
+
+  // Add tag buttons
+  allTags.forEach(tag => {
+    const tagBtn = document.createElement('button');
+    tagBtn.className = currentFilterTag === tag 
+      ? 'bg-blue-500 text-white px-3 py-1 rounded text-sm'
+      : 'bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300';
+    tagBtn.textContent = '#' + tag;
+    tagBtn.addEventListener('click', () => setFilterTag(tag));
+    tagCloudDiv.appendChild(tagBtn);
+  });
+}
+
 // --- Page Specific Logic ---
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -78,17 +143,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idx !== null && todos[idx]) {
       document.getElementById('title').value = todos[idx].title;
       document.getElementById('detail').value = todos[idx].detail || '';
+      // Load existing tags
+      const tagsInput = document.getElementById('tags');
+      if (tagsInput && todos[idx].tags && Array.isArray(todos[idx].tags)) {
+        tagsInput.value = todos[idx].tags.join(', ');
+      }
     }
 
     todoForm.addEventListener('submit', function(e) {
       e.preventDefault();
       const title = document.getElementById('title').value;
       const detail = document.getElementById('detail').value;
+      const tagsInput = document.getElementById('tags');
+      const tags = tagsInput ? parseTags(tagsInput.value) : [];
 
       if (idx !== null && todos[idx]) {
-        todos[idx] = { ...todos[idx], title, detail }; // Preserve other props like 'checked'
+        todos[idx] = { ...todos[idx], title, detail, tags }; // Preserve other props like 'checked'
       } else {
-        todos.push({ title, detail, checked: false });
+        todos.push({ title, detail, checked: false, tags });
       }
       saveTodos(todos);
       window.location.href = 'todolist.html';
@@ -98,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. ToDo List Page
   const todoList = document.getElementById('todoList');
   if (todoList) {
+    renderTagCloud();
     renderTodos();
   }
 });
@@ -113,12 +186,26 @@ function renderTodos() {
 
   list.innerHTML = '';
 
-  if (todos.length === 0) {
+  // Filter by tag if a filter is set
+  let filteredTodos = todos;
+  if (currentFilterTag !== null) {
+    filteredTodos = todos.filter(todo => 
+      todo.tags && Array.isArray(todo.tags) && todo.tags.includes(currentFilterTag)
+    );
+  }
+
+  // Get indices for the original todos array (for edit/delete operations)
+  const todosWithIdx = filteredTodos.map(todo => {
+    const originalIdx = todos.indexOf(todo);
+    return { todo, originalIdx };
+  });
+
+  if (todosWithIdx.length === 0) {
     list.innerHTML = '<li class="text-gray-500">ToDoがありません。</li>';
     return;
   }
 
-  todos.forEach((todo, idx) => {
+  todosWithIdx.forEach(({ todo, originalIdx }) => {
     const li = document.createElement('li');
     li.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
 
@@ -130,7 +217,7 @@ function renderTodos() {
     checkbox.type = 'checkbox';
     checkbox.className = 'mr-4 w-5 h-5 accent-blue-500';
     checkbox.checked = todo.checked || false;
-    checkbox.addEventListener('change', () => toggleCheck(idx));
+    checkbox.addEventListener('change', () => toggleCheck(originalIdx));
     
     const textDiv = document.createElement('div');
     
@@ -144,8 +231,21 @@ function renderTodos() {
     if (todo.checked) detailDiv.classList.add('line-through', 'text-gray-400');
     detailDiv.textContent = todo.detail || ''; // Secure
 
+    // Tags display
+    const tagsDiv = document.createElement('div');
+    tagsDiv.className = 'mt-1 flex flex-wrap gap-1';
+    if (todo.tags && Array.isArray(todo.tags) && todo.tags.length > 0) {
+      todo.tags.forEach(tag => {
+        const tagSpan = document.createElement('span');
+        tagSpan.className = 'bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded';
+        tagSpan.textContent = '#' + tag;
+        tagsDiv.appendChild(tagSpan);
+      });
+    }
+
     textDiv.appendChild(titleDiv);
     textDiv.appendChild(detailDiv);
+    textDiv.appendChild(tagsDiv);
     
     checkboxDiv.appendChild(checkbox);
     checkboxDiv.appendChild(textDiv);
@@ -155,14 +255,14 @@ function renderTodos() {
     actionsDiv.className = 'flex space-x-2';
 
     const editLink = document.createElement('a');
-    editLink.href = `edit.html?idx=${idx}`;
+    editLink.href = `edit.html?idx=${originalIdx}`;
     editLink.className = 'bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600';
     editLink.textContent = '編集';
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600';
     deleteBtn.textContent = '削除';
-    deleteBtn.addEventListener('click', () => deleteTodo(idx));
+    deleteBtn.addEventListener('click', () => deleteTodo(originalIdx));
 
     actionsDiv.appendChild(editLink);
     actionsDiv.appendChild(deleteBtn);
@@ -187,5 +287,6 @@ function deleteTodo(idx) {
   const todos = getTodos();
   todos.splice(idx, 1);
   saveTodos(todos);
+  renderTagCloud();
   renderTodos();
 }

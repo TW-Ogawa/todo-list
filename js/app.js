@@ -78,29 +78,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idx !== null && todos[idx]) {
       document.getElementById('title').value = todos[idx].title;
       document.getElementById('detail').value = todos[idx].detail || '';
-      document.getElementById('category').value = todos[idx].category || '仕事';
-      document.getElementById('priority').value = todos[idx].priority || '中';
     }
 
     todoForm.addEventListener('submit', function(e) {
       e.preventDefault();
       const title = document.getElementById('title').value;
       const detail = document.getElementById('detail').value;
-      const category = document.getElementById('category').value;
-      const priority = document.getElementById('priority').value;
-
-      const newTodo = {
-        title,
-        detail,
-        category,
-        priority,
-        checked: (idx !== null && todos[idx]) ? todos[idx].checked : false
-      };
 
       if (idx !== null && todos[idx]) {
-        todos[idx] = newTodo;
+        todos[idx] = { ...todos[idx], title, detail }; // Preserve other props like 'checked'
       } else {
-        todos.push(newTodo);
+        todos.push({ title, detail, checked: false });
       }
       saveTodos(todos);
       window.location.href = 'todolist.html';
@@ -127,9 +115,6 @@ function renderTodos() {
 
   if (todos.length === 0) {
     list.innerHTML = '<li class="text-gray-500">ToDoがありません。</li>';
-    if (typeof updateDashboard === 'function') {
-      updateDashboard();
-    }
     return;
   }
 
@@ -186,10 +171,6 @@ function renderTodos() {
     li.appendChild(actionsDiv);
     list.appendChild(li);
   });
-
-  if (typeof updateDashboard === 'function') {
-    updateDashboard();
-  }
 }
 
 function toggleCheck(idx) {

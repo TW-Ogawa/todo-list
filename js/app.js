@@ -114,7 +114,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Rendering & Actions (Exposed to global for inline event handlers if needed, but we prefer event delegation or re-attaching) ---
 // Since we are moving away from inline handlers like onclick="deleteTodo()", we need to handle events carefully.
-// We will attach event listeners during render or use delegation.
+/**
+ * Render the todo list into the DOM element with id "todoList", optionally filtering by category.
+ *
+ * Does nothing if the list element is not present.
+ *
+ * @param {string} filterCategory - Category to filter by: '' to show all, 'none' to show items without a category, or a specific category name to show only that category.
+ */
 
 function renderTodos(filterCategory = '') {
   const todos = getTodos();
@@ -220,6 +226,11 @@ function renderTodos(filterCategory = '') {
   });
 }
 
+/**
+ * Toggle the `checked` state of the todo at the given index and persist the updated list.
+ *
+ * @param {number} idx - Index of the todo in the stored list; if no todo exists at this index, no change is made.
+ */
 function toggleCheck(idx) {
   const todos = getTodos();
   if (todos[idx]) {
@@ -228,6 +239,12 @@ function toggleCheck(idx) {
   }
 }
 
+/**
+ * Remove a todo item at the given index after user confirmation.
+ *
+ * Prompts the user for confirmation; if confirmed, removes the todo at the provided zero-based index from persisted storage.
+ * @param {number} idx - Zero-based index of the todo to remove.
+ */
 function deleteTodo(idx) {
   if (!confirm('本当に削除しますか？')) return;
   const todos = getTodos();

@@ -78,17 +78,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idx !== null && todos[idx]) {
       document.getElementById('title').value = todos[idx].title;
       document.getElementById('detail').value = todos[idx].detail || '';
+      document.getElementById('recurring').value = todos[idx].recurring || 'none';
     }
 
     todoForm.addEventListener('submit', function(e) {
       e.preventDefault();
       const title = document.getElementById('title').value;
       const detail = document.getElementById('detail').value;
+      const recurring = document.getElementById('recurring').value;
 
       if (idx !== null && todos[idx]) {
-        todos[idx] = { ...todos[idx], title, detail }; // Preserve other props like 'checked'
+        todos[idx] = { ...todos[idx], title, detail, recurring }; // Preserve other props like 'checked'
       } else {
-        todos.push({ title, detail, checked: false });
+        todos.push({ title, detail, checked: false, recurring });
       }
       saveTodos(todos);
       window.location.href = 'todolist.html';
@@ -177,9 +179,51 @@ function toggleCheck(idx) {
   const todos = getTodos();
   if (todos[idx]) {
     todos[idx].checked = !todos[idx].checked;
+
+    if (todos[idx].checked && todos[idx].recurring && todos[idx].recurring !== 'none') {
+      const todo = todos[idx];
+      const nextDate = getNextDate(new Date(), todo.recurring);
+
+      const yyyy = nextDate.getFullYear();
+      const mm = String(nextDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(nextDate.getDate()).padStart(2, '0');
+      const nextDateStr = `${yyyy}-${mm}-${dd}`;
+
+      const newTitle = todo.title.replace(/ \(\d{4}-\d{2}-\d{2}\)$/, '') + ` (${nextDateStr})`;
+
+      const newTodo = {
+        ...todo,
+        title: newTitle,
+        checked: false,
+      };
+
+      todos.push(newTodo);
+    }
+
     saveTodos(todos);
     renderTodos();
   }
+}
+
+function getNextDate(currentDate, recurringType) {
+  const nextDate = new Date(currentDate);
+  switch (recurringType) {
+    case 'daily':
+      nextDate.setDate(nextDate.getDate() + 1);
+      break;
+    case 'weekly':
+      nextDate.setDate(nextDate.getDate() + 7);
+      break;
+    case 'monthly':
+      // Handle month-end dates correctly
+      const d = nextDate.getDate();
+      nextDate.setMonth(nextDate.getMonth() + 2, 0); // Go to the last day of next month
+      if (d < nextDate.getDate()) {
+        nextDate.setDate(d);
+      }
+      break;
+  }
+  return nextDate;
 }
 
 function deleteTodo(idx) {

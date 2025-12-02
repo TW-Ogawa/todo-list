@@ -99,6 +99,52 @@ document.addEventListener('DOMContentLoaded', () => {
   const todoList = document.getElementById('todoList');
   if (todoList) {
     renderTodos();
+
+    let draggedIdx = null;
+
+    todoList.addEventListener('dragstart', (e) => {
+      draggedIdx = parseInt(e.target.dataset.idx);
+      e.target.classList.add('dragging');
+    });
+
+    todoList.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const target = e.target.closest('li');
+      if (target && target.dataset.idx !== draggedIdx) {
+        const allItems = [...todoList.querySelectorAll('li:not(.dragging)')];
+        allItems.forEach(item => item.classList.remove('drag-over'));
+        target.classList.add('drag-over');
+      }
+    });
+
+    todoList.addEventListener('dragleave', (e) => {
+        const target = e.target.closest('li');
+        if (target) {
+            target.classList.remove('drag-over');
+        }
+    });
+
+    todoList.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const target = e.target.closest('li');
+      if (target) {
+        const droppedIdx = parseInt(target.dataset.idx);
+        const todos = getTodos();
+        const [draggedItem] = todos.splice(draggedIdx, 1);
+        todos.splice(droppedIdx, 0, draggedItem);
+        saveTodos(todos);
+        renderTodos(); // Re-render to reflect the new order
+      }
+    });
+
+    todoList.addEventListener('dragend', (e) => {
+        const draggingElement = todoList.querySelector('.dragging');
+        if(draggingElement) {
+            draggingElement.classList.remove('dragging');
+        }
+        const allItems = [...todoList.querySelectorAll('li')];
+        allItems.forEach(item => item.classList.remove('drag-over'));
+    });
   }
 });
 
@@ -120,7 +166,9 @@ function renderTodos() {
 
   todos.forEach((todo, idx) => {
     const li = document.createElement('li');
-    li.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
+    li.className = 'bg-white p-4 rounded shadow flex justify-between items-center cursor-move';
+    li.draggable = true;
+    li.dataset.idx = idx;
 
     // Checkbox
     const checkboxDiv = document.createElement('div');

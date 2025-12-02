@@ -124,13 +124,20 @@ function renderTodos(filterCategory = '') {
   list.innerHTML = '';
 
   // フィルタリング処理
-  let filteredTodos = todos.map((todo, idx) => ({ ...todo, originalIdx: idx }));
+  let filteredTodos;
   if (filterCategory === 'none') {
-    // カテゴリなしでフィルター
-    filteredTodos = filteredTodos.filter(todo => !todo.category);
+    // カテゴリなしでフィルター（undefinedと空文字列の両方を処理）
+    filteredTodos = todos
+      .map((todo, idx) => ({ ...todo, originalIdx: idx }))
+      .filter(todo => !todo.category || todo.category === '');
   } else if (filterCategory) {
     // 特定カテゴリでフィルター
-    filteredTodos = filteredTodos.filter(todo => todo.category === filterCategory);
+    filteredTodos = todos
+      .map((todo, idx) => ({ ...todo, originalIdx: idx }))
+      .filter(todo => todo.category === filterCategory);
+  } else {
+    // フィルターなし（すべて表示）
+    filteredTodos = todos.map((todo, idx) => ({ ...todo, originalIdx: idx }));
   }
 
   if (filteredTodos.length === 0) {

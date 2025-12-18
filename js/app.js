@@ -2,6 +2,8 @@
  * ToDo App Logic
  */
 
+// #TODO:すべての関数に日本語でコメントを付与する
+
 // --- Authentication ---
 
 function checkLogin() {

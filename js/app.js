@@ -80,17 +80,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idx !== null && todos[idx]) {
       document.getElementById('title').value = todos[idx].title;
       document.getElementById('detail').value = todos[idx].detail || '';
+      document.getElementById('category').value = todos[idx].category || '';
     }
 
     todoForm.addEventListener('submit', function(e) {
       e.preventDefault();
       const title = document.getElementById('title').value;
       const detail = document.getElementById('detail').value;
+      const category = document.getElementById('category').value;
 
       if (idx !== null && todos[idx]) {
-        todos[idx] = { ...todos[idx], title, detail }; // Preserve other props like 'checked'
+        todos[idx] = { ...todos[idx], title, detail, category }; // Preserve other props like 'checked'
       } else {
-        todos.push({ title, detail, checked: false });
+        todos.push({ title, detail, checked: false, category });
       }
       saveTodos(todos);
       window.location.href = 'todolist.html';
@@ -101,6 +103,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const todoList = document.getElementById('todoList');
   if (todoList) {
     renderTodos();
+    
+    // カテゴリフィルターのイベントリスナーを追加
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter) {
+      categoryFilter.addEventListener('change', () => {
+        renderTodos(categoryFilter.value);
+      });
+    }
   }
 });
 
@@ -108,19 +118,37 @@ document.addEventListener('DOMContentLoaded', () => {
 // Since we are moving away from inline handlers like onclick="deleteTodo()", we need to handle events carefully.
 // We will attach event listeners during render or use delegation.
 
-function renderTodos() {
+function renderTodos(filterCategory = '') {
   const todos = getTodos();
   const list = document.getElementById('todoList');
   if (!list) return;
 
   list.innerHTML = '';
 
-  if (todos.length === 0) {
+  // フィルタリング処理
+  let filteredTodos;
+  if (filterCategory === 'none') {
+    // カテゴリなしでフィルター（undefinedと空文字列の両方を処理）
+    filteredTodos = todos
+      .map((todo, idx) => ({ ...todo, originalIdx: idx }))
+      .filter(todo => !todo.category || todo.category === '');
+  } else if (filterCategory) {
+    // 特定カテゴリでフィルター
+    filteredTodos = todos
+      .map((todo, idx) => ({ ...todo, originalIdx: idx }))
+      .filter(todo => todo.category === filterCategory);
+  } else {
+    // フィルターなし（すべて表示）
+    filteredTodos = todos.map((todo, idx) => ({ ...todo, originalIdx: idx }));
+  }
+
+  if (filteredTodos.length === 0) {
     list.innerHTML = '<li class="text-gray-500">ToDoがありません。</li>';
     return;
   }
 
-  todos.forEach((todo, idx) => {
+  filteredTodos.forEach((todo) => {
+    const idx = todo.originalIdx;
     const li = document.createElement('li');
     li.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
 
@@ -132,7 +160,11 @@ function renderTodos() {
     checkbox.type = 'checkbox';
     checkbox.className = 'mr-4 w-5 h-5 accent-blue-500';
     checkbox.checked = todo.checked || false;
-    checkbox.addEventListener('change', () => toggleCheck(idx));
+    checkbox.addEventListener('change', () => {
+      toggleCheck(idx);
+      const categoryFilter = document.getElementById('categoryFilter');
+      renderTodos(categoryFilter ? categoryFilter.value : '');
+    });
     
     const textDiv = document.createElement('div');
     
@@ -146,8 +178,19 @@ function renderTodos() {
     if (todo.checked) detailDiv.classList.add('line-through', 'text-gray-400');
     detailDiv.textContent = todo.detail || ''; // Secure
 
+    // カテゴリ表示
+    const categoryDiv = document.createElement('div');
+    categoryDiv.className = 'text-xs mt-1';
+    if (todo.category) {
+      const categorySpan = document.createElement('span');
+      categorySpan.className = 'bg-blue-100 text-blue-800 px-2 py-1 rounded';
+      categorySpan.textContent = todo.category;
+      categoryDiv.appendChild(categorySpan);
+    }
+
     textDiv.appendChild(titleDiv);
     textDiv.appendChild(detailDiv);
+    textDiv.appendChild(categoryDiv);
     
     checkboxDiv.appendChild(checkbox);
     checkboxDiv.appendChild(textDiv);
@@ -164,7 +207,11 @@ function renderTodos() {
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600';
     deleteBtn.textContent = '削除';
-    deleteBtn.addEventListener('click', () => deleteTodo(idx));
+    deleteBtn.addEventListener('click', () => {
+      deleteTodo(idx);
+      const categoryFilter = document.getElementById('categoryFilter');
+      renderTodos(categoryFilter ? categoryFilter.value : '');
+    });
 
     actionsDiv.appendChild(editLink);
     actionsDiv.appendChild(deleteBtn);
@@ -180,7 +227,6 @@ function toggleCheck(idx) {
   if (todos[idx]) {
     todos[idx].checked = !todos[idx].checked;
     saveTodos(todos);
-    renderTodos();
   }
 }
 
@@ -189,5 +235,4 @@ function deleteTodo(idx) {
   const todos = getTodos();
   todos.splice(idx, 1);
   saveTodos(todos);
-  renderTodos();
 }

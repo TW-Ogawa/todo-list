@@ -25,6 +25,34 @@
           class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           id="detail" rows="3"></textarea>
       </div>
+      <!-- Notes Section -->
+      <div>
+        <label class="block mb-1 font-medium" for="note-input">メモ</label>
+        <div class="flex space-x-2">
+          <input
+            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            type="text" id="note-input" placeholder="メモを追加...">
+          <button type="button" id="add-note-btn" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">追加</button>
+        </div>
+        <ul id="notes-list" class="mt-2 space-y-2">
+          <!-- Notes will be dynamically added here -->
+        </ul>
+      </div>
+
+      <!-- Links Section -->
+      <div>
+        <label class="block mb-1 font-medium" for="link-input">外部リンク</label>
+        <div class="flex space-x-2">
+          <input
+            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            type="url" id="link-input" placeholder="https://example.com">
+          <button type="button" id="add-link-btn" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">追加</button>
+        </div>
+        <p id="link-error" class="text-red-500 text-sm mt-1 hidden">無効なURLです。</p>
+        <ul id="links-list" class="mt-2 space-y-2">
+          <!-- Links will be dynamically added here -->
+        </ul>
+      </div>
       <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition">保存</button>
       <a href="todolist.html" class="block text-center text-gray-500 mt-4 hover:underline">一覧に戻る</a>
     </form>

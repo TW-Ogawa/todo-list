@@ -36,6 +36,44 @@ function saveTodos(todos) {
   localStorage.setItem('todos', JSON.stringify(todos));
 }
 
+// --- Template Management ---
+
+function getTemplates() {
+  return JSON.parse(localStorage.getItem('templates') || '[]');
+}
+
+function saveTemplate(template) {
+  const templates = getTemplates();
+  templates.push({
+    id: crypto.randomUUID(),
+    title: template.title,
+    detail: template.detail || ''
+  });
+  localStorage.setItem('templates', JSON.stringify(templates));
+}
+
+function deleteTemplate(id) {
+  const templates = getTemplates();
+  const filtered = templates.filter(t => t.id !== id);
+  localStorage.setItem('templates', JSON.stringify(filtered));
+}
+
+function applyTemplate(id) {
+  const templates = getTemplates();
+  const template = templates.find(t => t.id === id);
+  if (template) {
+    const todos = getTodos();
+    todos.push({
+      title: template.title,
+      detail: template.detail,
+      checked: false
+    });
+    saveTodos(todos);
+    return true;
+  }
+  return false;
+}
+
 // --- Page Specific Logic ---
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -86,6 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const title = document.getElementById('title').value;
       const detail = document.getElementById('detail').value;
+      const saveAsTemplateCheckbox = document.getElementById('saveAsTemplate');
+      const saveAsTemplate = saveAsTemplateCheckbox ? saveAsTemplateCheckbox.checked : false;
 
       if (idx !== null && todos[idx]) {
         todos[idx] = { ...todos[idx], title, detail }; // Preserve other props like 'checked'
@@ -93,6 +133,12 @@ document.addEventListener('DOMContentLoaded', () => {
         todos.push({ title, detail, checked: false });
       }
       saveTodos(todos);
+
+      // Save as template if checkbox is checked
+      if (saveAsTemplate) {
+        saveTemplate({ title, detail });
+      }
+
       window.location.href = 'todolist.html';
     });
   }
@@ -101,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const todoList = document.getElementById('todoList');
   if (todoList) {
     renderTodos();
+    renderTemplates();
   }
 });
 
@@ -190,4 +237,72 @@ function deleteTodo(idx) {
   todos.splice(idx, 1);
   saveTodos(todos);
   renderTodos();
+}
+
+// --- Template Rendering ---
+
+function renderTemplates() {
+  const templates = getTemplates();
+  const list = document.getElementById('templateList');
+  const noTemplatesMsg = document.getElementById('noTemplates');
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  if (templates.length === 0) {
+    if (noTemplatesMsg) noTemplatesMsg.classList.remove('hidden');
+    return;
+  }
+
+  if (noTemplatesMsg) noTemplatesMsg.classList.add('hidden');
+
+  templates.forEach((template) => {
+    const li = document.createElement('li');
+    li.className = 'flex justify-between items-center bg-gray-50 p-2 rounded';
+
+    // Template info
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'flex-1';
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'font-medium';
+    titleSpan.textContent = template.title;
+
+    const detailSpan = document.createElement('span');
+    detailSpan.className = 'text-gray-500 text-sm ml-2';
+    detailSpan.textContent = template.detail ? `- ${template.detail}` : '';
+
+    infoDiv.appendChild(titleSpan);
+    infoDiv.appendChild(detailSpan);
+
+    // Actions
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'flex space-x-2';
+
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm';
+    applyBtn.textContent = '作成';
+    applyBtn.addEventListener('click', () => {
+      if (applyTemplate(template.id)) {
+        renderTodos();
+      }
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm';
+    deleteBtn.textContent = '削除';
+    deleteBtn.addEventListener('click', () => {
+      if (confirm('このテンプレートを削除しますか？')) {
+        deleteTemplate(template.id);
+        renderTemplates();
+      }
+    });
+
+    actionsDiv.appendChild(applyBtn);
+    actionsDiv.appendChild(deleteBtn);
+
+    li.appendChild(infoDiv);
+    li.appendChild(actionsDiv);
+    list.appendChild(li);
+  });
 }

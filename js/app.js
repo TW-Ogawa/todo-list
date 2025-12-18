@@ -2,16 +2,23 @@
  * ToDo App Logic
  */
 
-// #TODO:すべての関数に日本語でコメントを付与する
-
 // --- Authentication ---
 
+/**
+ * ログイン状態を確認し、未ログインの場合はログインページへリダイレクトします。
+ */
 function checkLogin() {
   if (localStorage.getItem('todo_login') !== '1') {
     window.location.href = 'login.html';
   }
 }
 
+/**
+ * ユーザー名とパスワードを検証し、ログイン処理を行います。
+ * @param {string} username - ユーザー名
+ * @param {string} password - パスワード
+ * @returns {boolean} ログイン成功時はtrue、失敗時はfalse
+ */
 function login(username, password) {
   // Hardcoded credentials (as per original code, but centralized)
   if (username === 'user' && password === 'pass') {
@@ -21,6 +28,9 @@ function login(username, password) {
   return false;
 }
 
+/**
+ * ログアウト処理を行い、ログインページへリダイレクトします。
+ */
 function logout() {
   localStorage.removeItem('todo_login');
   window.location.href = 'login.html';
@@ -28,16 +38,28 @@ function logout() {
 
 // --- Data Management ---
 
+/**
+ * ローカルストレージからToDoリストを取得します。
+ * @returns {Array} ToDoアイテムの配列
+ */
 function getTodos() {
   return JSON.parse(localStorage.getItem('todos') || '[]');
 }
 
+/**
+ * ToDoリストをローカルストレージに保存します。
+ * @param {Array} todos - 保存するToDoアイテムの配列
+ */
 function saveTodos(todos) {
   localStorage.setItem('todos', JSON.stringify(todos));
 }
 
 // --- Page Specific Logic ---
 
+/**
+ * ページの読み込み完了時に実行される初期化処理です。
+ * ページごとのロジックやイベントリスナーの設定を行います。
+ */
 document.addEventListener('DOMContentLoaded', () => {
   const path = window.location.pathname;
   const page = path.split('/').pop();
@@ -108,6 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Since we are moving away from inline handlers like onclick="deleteTodo()", we need to handle events carefully.
 // We will attach event listeners during render or use delegation.
 
+/**
+ * ToDoリストを画面に描画します。
+ */
 function renderTodos() {
   const todos = getTodos();
   const list = document.getElementById('todoList');
@@ -175,6 +200,10 @@ function renderTodos() {
   });
 }
 
+/**
+ * 指定されたインデックスのToDoの完了状態を切り替えます。
+ * @param {number} idx - ToDoのインデックス
+ */
 function toggleCheck(idx) {
   const todos = getTodos();
   if (todos[idx]) {
@@ -184,6 +213,10 @@ function toggleCheck(idx) {
   }
 }
 
+/**
+ * 指定されたインデックスのToDoを削除します。
+ * @param {number} idx - ToDoのインデックス
+ */
 function deleteTodo(idx) {
   if (!confirm('本当に削除しますか？')) return;
   const todos = getTodos();

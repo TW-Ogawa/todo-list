@@ -80,17 +80,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idx !== null && todos[idx]) {
       document.getElementById('title').value = todos[idx].title;
       document.getElementById('detail').value = todos[idx].detail || '';
+      document.getElementById('reminderTime').value = todos[idx].reminderTime || '';
     }
 
     todoForm.addEventListener('submit', function(e) {
       e.preventDefault();
       const title = document.getElementById('title').value;
       const detail = document.getElementById('detail').value;
+      const reminderTime = document.getElementById('reminderTime').value;
 
       if (idx !== null && todos[idx]) {
-        todos[idx] = { ...todos[idx], title, detail }; // Preserve other props like 'checked'
+        todos[idx] = { ...todos[idx], title, detail, reminderTime }; // Preserve other props
       } else {
-        todos.push({ title, detail, checked: false });
+        todos.push({ title, detail, checked: false, reminderTime });
       }
       saveTodos(todos);
       window.location.href = 'todolist.html';
@@ -101,8 +103,55 @@ document.addEventListener('DOMContentLoaded', () => {
   const todoList = document.getElementById('todoList');
   if (todoList) {
     renderTodos();
+    initializeNotifications();
   }
 });
+
+// --- Notifications ---
+
+function initializeNotifications() {
+  if (!('Notification' in window)) {
+    console.log('このブラウザはデスクトップ通知をサポートしていません');
+    return;
+  }
+
+  // ユーザーに許可を求める
+  if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        console.log('通知の許可が得られました');
+      }
+    });
+  }
+
+  // 1分ごとにリマインダーをチェック
+  setInterval(checkReminders, 60000);
+}
+
+function checkReminders() {
+  const todos = getTodos();
+  const now = new Date();
+  let updated = false;
+
+  todos.forEach(todo => {
+    // 未完了、未通知、リマインダー設定済みのToDoをチェック
+    if (!todo.checked && !todo.notified && todo.reminderTime) {
+      const reminderTime = new Date(todo.reminderTime);
+      if (reminderTime <= now) {
+        // 通知を送信
+        new Notification('ToDoリマインダー', {
+          body: todo.title,
+        });
+        todo.notified = true; // 通知済みフラグを立てる
+        updated = true;
+      }
+    }
+  });
+
+  if (updated) {
+    saveTodos(todos);
+  }
+}
 
 // --- Rendering & Actions (Exposed to global for inline event handlers if needed, but we prefer event delegation or re-attaching) ---
 // Since we are moving away from inline handlers like onclick="deleteTodo()", we need to handle events carefully.
@@ -148,6 +197,14 @@ function renderTodos() {
 
     textDiv.appendChild(titleDiv);
     textDiv.appendChild(detailDiv);
+
+    if (todo.reminderTime) {
+      const reminderDiv = document.createElement('div');
+      reminderDiv.className = 'text-blue-500 text-xs mt-1';
+      const formattedTime = todo.reminderTime.replace('T', ' ');
+      reminderDiv.textContent = `リマインダー: ${formattedTime}`;
+      textDiv.appendChild(reminderDiv);
+    }
     
     checkboxDiv.appendChild(checkbox);
     checkboxDiv.appendChild(textDiv);
